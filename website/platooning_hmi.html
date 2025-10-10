@@ -19,7 +19,23 @@
       padding: 20px;
       display: flex;
       flex-direction: column;
-      /* overflow: hidden;  */
+
+      justify-content: center;
+      align-items: center;
+      overflow: hidden; 
+    }
+
+    .button_square {
+      width: 50px;
+      padding: 10px 0px;
+      margin: 5px;
+      background: #22314E;
+      color: white;
+      border: 0px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: Lato, sans-serif;
     }
 
     .button_idle {
@@ -115,6 +131,21 @@
       width: 200px;
       height: auto;
     }
+
+    .display-box input[type="number"] {
+      width: 200px;
+      padding: 10px 15px;
+      font-size: 16px;
+      font-family: Lato, sans-serif;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      transition: border 0.3s ease;
+    }
+
+    .display-box input[type="number"]:focus {
+      border-color: #007BFF;
+      outline: none;
+    }
   </style>
 </head>
 
@@ -149,6 +180,12 @@
       <div class="value" id="brakingBox">-</div>
     </div>
 
+    <div class="display-box">
+      <div class="title">Set distance</div>
+      <input id="set_distance_entry" type="number" placeholder="Distance" />
+      <button id="button_set_distance" class="button_square" onclick="setDistance()">Set</button>
+    </div>
+
     <button id="button_start" class="button_off" onclick="sendCommand(2)">Start</button>
     <button id="button_stop" class="button_off" onclick="sendCommand(1)">Stop</button>
 
@@ -162,9 +199,10 @@
 
     let ros_connected = false;
     let intervalId = null;
+    let intervalSetDistanceId = null;
     let timeoutId = null;
 
-    const publish_period_ms = 500;
+    const publish_period_ms = 1000;
     const timeout_ms = 2500;
 
     let rosServerIpPort = "143.106.207.89:9090";
@@ -181,6 +219,7 @@
     let speedTopic = new ROSLIB.Topic();
     let throttleTopic = new ROSLIB.Topic();
     let brakingTopic = new ROSLIB.Topic();
+    let setDistanceTopic = new ROSLIB.Topic();
 
     async function loadConfigAndStart() {
 
@@ -240,6 +279,11 @@
         name: '/hmi/braking',
         messageType: 'std_msgs/Float32'
       });
+      setDistanceTopic = new ROSLIB.Topic({
+        ros: ros,
+        name: '/hmi/set_distance',
+        messageType: 'std_msgs/Float32'
+      });
 
       // Subscribers callbacks
       statusTopic.subscribe((message) => {
@@ -286,20 +330,39 @@
     }
 
 
-    // Publish function
+    // Publish functions
     function sendCommand(action) {
       if (ros_connected) {
+        const msg = new ROSLIB.Message({ data: action });
+        commandTopic.publish(msg);
+        console.log(`Platooning set to: ${msg.data}`);
         if (intervalId !== null) {
           clearInterval(intervalId);
         }
         intervalId = setInterval(() => {
-          const msg = new ROSLIB.Message({ data: action });
           commandTopic.publish(msg);
-          console.log(`Published: ${msg.data}`);
         }, publish_period_ms);
       }
     }
 
+    function setDistance() {
+      const distance = document.getElementById("set_distance_entry").value;
+      document.getElementById("set_distance_entry").value = "";
+      document.getElementById("set_distance_entry").placeholder = "Current distance: " + distance + " m";
+      if (ros_connected) {
+        const msg = new ROSLIB.Message({ data: parseFloat(distance) });
+        setDistanceTopic.publish(msg);
+        console.log(`Distance set to: ${msg.data}`);
+        if (intervalSetDistanceId !== null) {
+          clearInterval(intervalSetDistanceId);
+        }
+        intervalSetDistanceId = setInterval(() => {
+          setDistanceTopic.publish(msg);
+        }, publish_period_ms);
+      }
+    }
+
+    // Watchdog function
     function resetTimeout() {
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -323,7 +386,7 @@
 
 <footer class="footer">
   <img src="Logo_LMA_trim.png" alt="Logo" class="footer-logo">
-  <p>Laboratory of Autonomous Mobility (LMA)</p>
+  <!-- <p>Laboratory of Autonomous Mobility (LMA)</p> -->
 </footer>
 
 </html>
