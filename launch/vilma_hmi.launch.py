@@ -5,6 +5,8 @@ import errno
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess
 from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 
 def load_yaml(yaml_file_path):
@@ -23,14 +25,12 @@ def symlink_force(target, link_name):
 
 def generate_launch_description():
     
-    DeclareLaunchArgument("interface", default_value="vilma_status")
-    
-    ros2pa
+    interface = DeclareLaunchArgument("interface", default_value="vilma_status")
     
     server_dir = os.path.join(get_package_share_directory("vilma_hmi"), "website")
     params_dir = os.path.join(get_package_share_directory("vilma_hmi"), "config")
     
-    params = load_yaml(os.path.join(params_dir, interface))
+    params = load_yaml(os.path.join(params_dir, LaunchConfiguration("interface")+".param"))
     
     rosbridge_ip = params['vilma_hmi']['ros__parameters']['server_ip']
     rosbridge_port = params['vilma_hmi']['ros__parameters']['rosbridge_port']
@@ -46,6 +46,8 @@ def generate_launch_description():
         json.dump(config, f)
 
     return LaunchDescription([
+        interface,
+        
         # Start rosbridge_websocket on port 9090
         ExecuteProcess(
             cmd=['ros2', 'launch', 'rosbridge_server', 'rosbridge_websocket_launch.xml', 'port:='+rosbridge_port],
