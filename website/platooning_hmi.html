@@ -80,12 +80,23 @@
     .display-box {
       border: 1px solid #ddd;
       padding: 15px;
-      margin: 10px auto;
+      margin: 0px auto;
       border-radius: 8px;
     }
 
     .display-box {
       width: 300px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      background: #f9f9f9;
+      font-family: Lato, sans-serif;
+    }
+
+    .display-box-thin {
+      width: 134px;
       padding: 12px;
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -114,6 +125,25 @@
       color: #222;
     }
 
+    .display-box-thin .title {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #555;
+    }
+
+    .display-box-thin .value {
+      font-size: 20px;
+      font-weight: normal;
+      color: #222;
+    }
+
+    .display-box-thin .valuesmall {
+      font-size: 14px;
+      font-weight: normal;
+      color: #222;
+    }
+
     .content {
       flex: 1;
       font-family: Lato, sans-serif;
@@ -128,7 +158,7 @@
     .footer-logo {
       display: block;
       margin: 0 auto 10px;
-      width: 150px;
+      width: 200px;
       height: auto;
     }
 
@@ -146,55 +176,84 @@
       border-color: #007BFF;
       outline: none;
     }
+
+    /* ----- TABLE-LIKE BODY ----- */
+    .table-container {
+      margin: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .table-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
   </style>
 </head>
 
 <body>
 
-  <div class=content>
+  <div class="table-container">
 
-    <!-- <h1>VILMA HMI</h1> -->
+    <h1>VILMA HMI</h1>
 
-    <div class="display-box">
-      <div class="title">Status</div>
-      <div class="valuesmall" id="statusBox">Waiting ROS data...</div>
+    <div class="table-row">
+      <div class="display-box">
+        <div class="title">Status</div>
+        <div class="valuesmall" id="statusBox">Waiting ROS data...</div>
+      </div>
     </div>
 
-    <div class="display-box">
-      <div class="title">Distance</div>
-      <div class="value" id="distanceBox">-</div>
+    <div class="table-row">
+      <div class="display-box">
+        <div class="title">Distance</div>
+        <div class="value" id="distanceBox">-</div>
+      </div>
     </div>
 
-    <div class="display-box">
-      <div class="title">Speed leader</div>
-      <div class="value" id="speedLeaderBox">-</div>
+    <div class="table-row">
+      <div class="display-box-thin">
+        <div class="title">Speed Leader</div>
+        <div class="value" id="speedLeaderBox">-</div>
+      </div>
+
+      <div class="display-box-thin">
+        <div class="title">Speed Ego</div>
+        <div class="value" id="speedBox">-</div>
+      </div>
     </div>
 
-    <div class="display-box">
-      <div class="title">Speed ego</div>
-      <div class="value" id="speedBox">-</div>
+    <div class="table-row">
+      <div class="display-box-thin">
+        <div class="title">Throttle</div>
+        <div class="value" id="throttleBox">-</div>
+      </div>
+
+      <div class="display-box-thin">
+        <div class="title">Braking</div>
+        <div class="value" id="brakingBox">-</div>
+      </div>
     </div>
 
-    <div class="display-box">
-      <div class="title">Throttle</div>
-      <div class="value" id="throttleBox">-</div>
+    <div class="table-row">
+      <div class="display-box">
+        <div class="title">Set distance</div>
+        <input id="set_distance_entry" type="number" placeholder="Current distance: 10 m" />
+        <button id="button_set_distance" class="button_square" onclick="setDistance()">Set</button>
+      </div>
     </div>
+  </div>
 
-    <div class="display-box">
-      <div class="title">Braking</div>
-      <div class="value" id="brakingBox">-</div>
-    </div>
 
-    <div class="display-box">
-      <div class="title">Set distance</div>
-      <input id="set_distance_entry" type="number" placeholder="Distance" />
-      <button id="button_set_distance" class="button_square" onclick="setDistance()">Set</button>
-    </div>
 
+  <div class="content">
     <button id="button_start" class="button_off" onclick="sendCommand(2)">Start</button>
     <button id="button_stop" class="button_off" onclick="sendCommand(1)">Stop</button>
-
   </div>
+
 
   <script src="/roslib.min.js"></script>
   <script>
