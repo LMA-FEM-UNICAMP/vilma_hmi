@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VILMA HMI</title>
+  <link rel="icon" type="image/png" href="assets/Logo_LMA_icon.png">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/hmi.css">
+
+</head>
+
+<body>
+
+  <!-- Notification -->
+  <div id="notification-container">
+    <div id="notification" class="notification hidden">
+      <span id="notification-message"></span>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+
+  <div class=content>
+
+    <h1>VILMA HMI</h1>
+
+    <div class="display-box" id="statusDisplay">
+      <div class="title">Status</div>
+      <div class="valuesmall" id="statusBox">Waiting ROS data...</div>
+    </div>
+
+    <div class="display-box" id="speedDisplay">
+      <div class="title">Speed</div>
+      <div class="value" id="speedBox">- km/h</div>
+    </div>
+
+    <div class="display-box" id="throttleDisplay">
+      <div class="title">Throttle</div>
+      <div class="value" id="throttleBox">- %</div>
+    </div>
+
+    <div class="display-box" id="brakeDisplay">
+      <div class="title">Braking</div>
+      <div class="value" id="brakingBox">- %</div>
+    </div>
+
+  </div>
+
+  <!-- JS -->
+  <script src="js/hmi-utils.js"></script>
+  <script src="assets/roslib.min.js"></script>
+
+  <script>
+
+    // Testing HMI functionalities -- START
+    document.getElementById("statusDisplay").addEventListener("click", () => {
+      HMI.showNotification("Obstacle detected", "warning");
+      HMI.startBlinking();
+      HMI.playAlertSound();
+    });
+    document.getElementById("speedDisplay").addEventListener("click", () => {
+      HMI.startBlinking();
+      HMI.playWarningLoop();
+    });
+    document.getElementById("brakeDisplay").addEventListener("click", () => {
+      HMI.stopBlinking();
+      HMI.stopWarningLoop();
+    });
+    // Testing HMI functionalities -- END
+
+    let ros_connected = false;
+    let intervalId = null;
+    let timeoutId = null;
+
+    const publish_period_ms = 500;
+    const timeout_ms = 2500;
+
+    let rosServerIpPort = "192.168.140.4:9090";
+
+    // ROS server object
+    let ros = new ROSLIB.Ros();
+
+    // Subscriber for status updates
+    let speedTopic = new ROSLIB.Topic();
+    let throttleTopic = new ROSLIB.Topic();
+    let brakingTopic = new ROSLIB.Topic();
+
+    async function loadConfigAndStart() {
+
+      try {
+        const res = await fetch('/config.json');      // waits until fetch is done
+        const cfg = await res.json();                 // waits until JSON is parsed
+        rosServerIpPort = cfg.serviceIp;
+        console.log("JSON READ:", cfg.serviceIp);
+      } catch (err) {
+        console.error("Error loading config:", err);
+      }
+
+      // Connect to ROS bridge
+      let rosServerUrl = "ws://" + rosServerIpPort;
+
+      // Get ROSBridge server IP and port
+      console.log("rosServerIpPort: " + rosServerUrl);
+
+      ros = new ROSLIB.Ros({
+        url: rosServerUrl
+      });
+
+      ros.on('connection', () => console.log('Connected to ROS'));
+      ros.on('error', (error) => console.log('Error: ', error));
+      ros.on('close', () => console.log('Connection closed.'));
+
+      // Configure subscribers
+      speedTopic = new ROSLIB.Topic({
+        ros: ros,
+        name: '/hmi/speed',
+        messageType: 'std_msgs/Float32'
+      });
+      throttleTopic = new ROSLIB.Topic({
+        ros: ros,
+        name: '/hmi/throttle',
+        messageType: 'std_msgs/Float32'
+      });
+      brakingTopic = new ROSLIB.Topic({
+        ros: ros,
+        name: '/hmi/braking',
+        messageType: 'std_msgs/Float32'
+      });
+
+
+        document.getElementById('statusBox').innerText = rosServerUrl;
+
+      // Subscribers callbacks
+
+      throttleTopic.subscribe((message) => {
+        document.getElementById('throttleBox').innerText = message.data.toFixed(2) + ' %';
+        resetTimeout();
+      });
+
+      brakingTopic.subscribe((message) => {
+        document.getElementById('brakingBox').innerText = message.data.toFixed(2);
+        resetTimeout();
+      });
+
+      speedTopic.subscribe((message) => {
+        let speed_km_h = message.data * 3.6;
+        document.getElementById('speedBox').innerText = speed_km_h.toFixed(1) + ' km/h';
+        resetTimeout();
+      });
+
+    }
+
+    function resetTimeout() {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        document.getElementById('statusBox').style.cssText = "";
+        // document.getElementById('statusBox').innerText = "Receiving data...";
+      }
+
+      timeoutId = setTimeout(() => {
+        document.getElementById('statusBox').innerText = "Communication timeout!!!";
+        document.getElementById('statusBox').style.color = "red";
+        document.getElementById('statusBox').style.fontWeight = "bold";
+        document.getElementById('statusBox').style.fontSize = "20px";
+        console.log('Communication timeout!');
+      }, timeout_ms);
+    }
+
+    loadConfigAndStart();
+
+
+  </script>
+</body>
+
+<footer class="footer">
+  <img src="assets/Logo_LMA_trim.png" alt="Logo" class="footer-logo">
+  <p>Laboratory of Autonomous Mobility (LMA)</p>
+</footer>
+
+</html>

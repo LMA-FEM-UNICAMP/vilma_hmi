@@ -1,0 +1,181 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    text-align: center;
+    font-family: Lato;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    /* overflow: hidden;  */
+}
+
+
+
+/* blinking */
+.blink-warning {
+  animation: blinkBg 0.5s infinite;
+}
+
+@keyframes blinkBg {
+  0%   { background-color: red; }
+  50%  { background-color: white; }
+  100% { background-color: red; }
+}
+
+.button_idle {
+      width: 150px;
+      padding: 25px 0px;
+      margin: 12px;
+      background: #22314E;
+      color: white;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      font-family: Lato, sans-serif;
+}
+
+.button_off {
+    width: 150px;
+    padding: 25px 0px;
+    margin: 12px;
+    background: #22314E;
+    color: #22314E;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    font-family: Lato, sans-serif;
+}
+
+.button_selected {
+    width: 150px;
+    padding: 25px 0px;
+    margin: 12px;
+    background: #0057f3;
+    color: white;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    font-family: Lato, sans-serif;
+}
+
+.display-box {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px auto;
+    border-radius: 8px;
+}
+
+.display-box {
+    width: 350px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: #f9f9f9;
+    font-family: Lato, sans-serif;
+}
+
+.display-box .title {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.display-box .value {
+    font-size: 72px;
+    font-weight: normal;
+    color: #222;
+}
+
+.display-box .valuesmall {
+    font-size: 14px;
+    font-weight: normal;
+    color: #222;
+}
+
+.content {
+    flex: 1;
+    font-family: Lato, sans-serif;
+}
+
+.footer {
+    background-color: #ffffff00;
+    padding: 15px;
+    text-align: center;
+}
+
+.footer-logo {
+    display: block;
+    margin: 0 auto 10px;
+    width: 200px;
+    height: auto;
+}
+
+
+
+
+
+
+/*  */
+
+#notification-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  z-index: 9999;
+}
+
+.notification {
+  background: #1e1e1e;
+  color: white;
+  padding: 14px 18px;
+
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.25s ease;
+}
+
+/* hidden state */
+.notification.hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+/* variants */
+.notification.warning {
+  background: #ffb020;
+  color: #222;
+}
+
+.notification.error {
+  background: #ff4d4f;
+}
+
+/* button */
+.notification button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
