@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VILMA HMI</title>
+  <link rel="icon" type="image/png" href="assets/Logo_LMA_icon.png">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/hmi.css">
+
+</head>
+
+<body>
+
+  <!-- Notification -->
+  <div id="notification-container">
+    <div id="notification" class="notification hidden">
+      <span id="notification-message"></span>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+
+  <div class=content>
+
+    <h1>VILMA HMI</h1>
+
+    <div class="display-box" id="statusDisplay">
+      <div class="title">Status</div>
+      <div class="valuesmall" id="statusBox">Waiting ROS data...</div>
+    </div>
+
+    <div class="display-box" id="timeToChangeDisplay">
+      <div class="title">Time to change</div>
+      <div class="value" id="timeToChange">--</div>
+    </div>
+
+    <div class="display-box" id="stateTLDisplay">
+      <div class="title">State</div>
+      <div class="value" id="stateTL">--</div>
+    </div>
+
+  </div>
+
+  <!-- JS -->
+  <script src="js/hmi-utils.js"></script>
+  <script src="assets/roslib.min.js"></script>
+
+  <script>
+
+    let ros_connected = false;
+    let intervalId = null;
+    let timeoutId = null;
+
+    const publish_period_ms = 500;
+    const timeout_ms = 2500;
+
+    let rosServerIpPort = "192.168.140.4:9090";
+
+    // ROS server object
+    let ros = new ROSLIB.Ros();
+
+    // Subscriber for status updates
+    let speedTopic = new ROSLIB.Topic();
+    let throttleTopic = new ROSLIB.Topic();
+    let brakingTopic = new ROSLIB.Topic();
+
+    let tlStateTopic = new ROSLIB.Topic();
+    let tlNextPhaseTopic = new ROSLIB.Topic();
+
+    async function loadConfigAndStart() {
+
+      try {
+        const res = await fetch('/config.json');      // waits until fetch is done
+        const cfg = await res.json();                 // waits until JSON is parsed
+        rosServerIpPort = cfg.serviceIp;
+        console.log("JSON READ:", cfg.serviceIp);
+      } catch (err) {
+        console.error("Error loading config:", err);
+      }
+
+      // Connect to ROS bridge
+      let rosServerUrl = "ws://" + rosServerIpPort;
+
+      // Get ROSBridge server IP and port
+      console.log("rosServerIpPort: " + rosServerUrl);
+
+      ros = new ROSLIB.Ros({
+        url: rosServerUrl
+      });
+
+      ros.on('connection', () => console.log('Connected to ROS'));
+      ros.on('error', (error) => console.log('Error: ', error));
+      ros.on('close', () => console.log('Connection closed.'));
+
+      // Configure subscribers
+
+      tlStateTopic = new ROSLIB.Topic({
+        ros: ros,
+        name: '/state',
+        messageType: 'std_msgs/UInt8'
+      });
+
+      tlNextPhaseTopic = new ROSLIB.Topic({
+        ros: ros,
+        name: '/time_to_change',
+        messageType: 'std_msgs/Float32'
+      });
+
+
+      document.getElementById('statusBox').innerText = rosServerUrl;
+
+      // Subscribers callbacks
+
+      tlStateTopic.subscribe((message) => {
+        let state = 'Disabled';
+        let color = "gray";
+
+        switch (message.data) {
+          case 0:
+            state = 'UNAVAILABLE';
+            color = "gray";
+            break;
+          case 1:
+            state = 'DARK';
+            color = "gray";
+            break;
+          case 2:
+            state = 'STOP_THEN_PROCEED';
+            color = "red";
+            break;
+          case 3:
+            state = 'STOP_AND_REMAIN';
+            color = "red";
+            break;
+          case 4:
+            state = 'PRE_MOVEMENT';
+            color = "orange";
+            break;
+          case 5:
+            state = 'PERMISSIVE_MOVEMENT_ALLOWED';
+            color = "green";
+            break;
+          case 6:
+            state = 'PROTECTED_MOVEMENT_ALLOWED';
+            color = "green";
+            break;
+          case 7:
+            state = 'PERMISSIVE_CLEARANCE';
+            color = "orange";
+            break;
+          case 8:
+            state = 'PROTECTED_CLEARANCE';
+            color = "orange";
+            break;
+          case 9:
+            state = 'CAUTION_CONFLICTING_TRAFFIC';
+            color = "orange";
+            break;
+          default:
+            state = 'UNKNOWN';
+            color = "gray";
+            break;
+        }
+
+        document.getElementById('stateTL').innerText = state;
+        document.getElementById('stateTL').style.color = color;
+        document.getElementById('stateTL').style.fontWeight = "bold";
+        document.getElementById('stateTL').style.fontSize = "20px";
+        resetTimeout();
+      });
+
+      tlNextPhaseTopic.subscribe((message) => {
+        document.getElementById('timeToChange').innerText = message.data.toFixed(1) + ' s';
+        resetTimeout();
+      });
+
+    }
+
+    function resetTimeout() {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        document.getElementById('statusBox').style.cssText = "";
+        // document.getElementById('statusBox').innerText = "Receiving data...";
+      }
+
+      timeoutId = setTimeout(() => {
+        document.getElementById('statusBox').innerText = "Communication timeout!!!";
+        document.getElementById('statusBox').style.color = "red";
+        document.getElementById('statusBox').style.fontWeight = "bold";
+        document.getElementById('statusBox').style.fontSize = "20px";
+        console.log('Communication timeout!');
+      }, timeout_ms);
+    }
+
+    loadConfigAndStart();
+
+
+  </script>
+</body>
+
+<footer class="footer">
+  <img src="assets/Logo_LMA_trim.png" alt="Logo" class="footer-logo">
+  <p>Laboratory of Autonomous Mobility (LMA)</p>
+</footer>
+
+</html>
