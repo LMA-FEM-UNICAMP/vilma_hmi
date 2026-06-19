@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VILMA HMI</title>
+    <link rel="icon" type="image/png" href="Logo_LMA_icon.png">
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            text-align: center;
+            font-family: Lato;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .button_square {
+            width: 50px;
+            padding: 10px 0px;
+            margin: 5px;
+            background: #22314E;
+            color: white;
+            border: 0px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: Lato, sans-serif;
+        }
+
+        .button_idle {
+            width: 150px;
+            padding: 25px 0px;
+            margin: 12px;
+            background: #22314E;
+            color: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            font-family: Lato, sans-serif;
+        }
+
+        .button_off {
+            width: 150px;
+            padding: 25px 0px;
+            margin: 12px;
+            background: #585858;
+            color: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            font-family: Lato, sans-serif;
+        }
+
+        .button_selected {
+            width: 150px;
+            padding: 25px 0px;
+            margin: 12px;
+            background: #0057f3;
+            color: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            font-family: Lato, sans-serif;
+        }
+
+        .display-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 0px auto;
+            border-radius: 8px;
+        }
+
+        .display-box {
+            width: 300px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background: #f9f9f9;
+            font-family: Lato, sans-serif;
+        }
+
+        .display-box-thin {
+            width: 134px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background: #f9f9f9;
+            font-family: Lato, sans-serif;
+        }
+
+        .display-box .title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .display-box .value {
+            font-size: 20px;
+            font-weight: normal;
+            color: #222;
+        }
+
+        .display-box .valuesmall {
+            font-size: 14px;
+            font-weight: normal;
+            color: #222;
+        }
+
+        .display-box-thin .title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .display-box-thin .value {
+            font-size: 20px;
+            font-weight: normal;
+            color: #222;
+        }
+
+        .display-box-thin .valuesmall {
+            font-size: 14px;
+            font-weight: normal;
+            color: #222;
+        }
+
+        .content {
+            flex: 1;
+            font-family: Lato, sans-serif;
+        }
+
+        .footer {
+            background-color: #fff;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .footer-logo {
+            display: block;
+            margin: 0 auto 10px;
+            width: 250px;
+            height: auto;
+        }
+
+        .display-box input[type="number"] {
+            width: 200px;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-family: Lato, sans-serif;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            transition: border 0.3s ease;
+        }
+
+        .display-box input[type="number"]:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
+
+        /* ----- TABLE-LIKE BODY ----- */
+        .table-container {
+            margin: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .table-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="table-container">
+
+        <h1>VILMA HMI</h1>
+
+        <div class="table-row">
+            <div class="display-box">
+                <div class="title">Status</div>
+                <div class="valuesmall" id="statusBox">Waiting ROS data...</div>
+            </div>
+        </div>
+
+        <div class="table-row">
+            <div class="display-box">
+                <div class="title">Distance</div>
+                <div class="value" id="distanceBox">-</div>
+            </div>
+        </div>
+
+        <div class="table-row">
+            <div class="display-box-thin">
+                <div class="title">Speed Leader</div>
+                <div class="value" id="speedLeaderBox">-</div>
+            </div>
+
+            <div class="display-box-thin">
+                <div class="title">Speed Ego</div>
+                <div class="value" id="speedBox">-</div>
+            </div>
+        </div>
+
+        <div class="table-row">
+            <div class="display-box-thin">
+                <div class="title">Throttle</div>
+                <div class="value" id="throttleBox">-</div>
+            </div>
+
+            <div class="display-box-thin">
+                <div class="title">Braking</div>
+                <div class="value" id="brakingBox">-</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="content">
+        <button id="button_manual" class="button_off" onclick="setControlMode(4)">MANUAL</button>
+        <button id="button_auto" class="button_off" onclick="setControlMode(1)">AUTO</button>
+        <button id="button_auto_vel" class="button_off" onclick="setControlMode(3)">AUTO Vel</button>
+        <button id="button_auto_steer" class="button_off" onclick="setControlMode(2)">AUTO Steer</button>
+    </div>
+
+
+    <script src="/roslib.min.js"></script>
+    <script>
+
+        const button_manual = document.getElementById("button_manual");
+        const button_auto = document.getElementById("button_auto");
+        const button_auto_vel = document.getElementById("button_auto_vel");
+        const button_auto_steer = document.getElementById("button_auto_steer");
+
+        let ros_connected = false;
+        let intervalId = null;
+        let intervalSetDistanceId = null;
+        let timeoutId = null;
+
+        const publish_period_ms = 1000;
+        const timeout_ms = 2500;
+
+        let rosServerIpPort = "143.106.207.89:9090";
+
+        // ROS server object
+        let ros = new ROSLIB.Ros();
+
+        // Services
+        let controlModeService = new ROSLIB.Service();
+
+        // Subscriber for status updates
+        let statusTopic = new ROSLIB.Topic();
+        let speedTopic = new ROSLIB.Topic();
+        let throttleTopic = new ROSLIB.Topic();
+        let brakingTopic = new ROSLIB.Topic();
+        let steerTopic = new ROSLIB.Topic();
+        let controlModeTopic = new ROSLIB.Topic();
+
+        async function loadConfigAndStart() {
+
+            try {
+                const res = await fetch('/config.json');      // waits until fetch is done
+                const cfg = await res.json();                 // waits until JSON is parsed
+                rosServerIpPort = cfg.serviceIp;
+                console.log("JSON READ:", cfg.serviceIp);
+            } catch (err) {
+                console.error("Error loading config:", err);
+            }
+
+            // Get ROSBridge server IP and port
+            console.log("rosServerIpPort" + rosServerIpPort);
+
+            // Connect to ROS bridge
+            let rosServerUrl = "ws://" + rosServerIpPort;
+
+            ros = new ROSLIB.Ros({
+                url: rosServerUrl
+            });
+
+            ros.on('connection', () => console.log('Connected to ROS'));
+            ros.on('error', (error) => console.log('Error: ', error));
+            ros.on('close', () => console.log('Connection closed.'));
+
+            // TODO Configure service
+            controlModeService = new ROSLIB.Service({
+                ros: ros,
+                name: '/control_mode_request',
+                serviceType: 'autoware_vehicle_msgs/srv/ControlModeCommand'
+            });
+
+            // Configure subscribers
+            statusTopic = new ROSLIB.Topic({
+                ros: ros,
+                name: '/hmi/status',
+                messageType: 'std_msgs/String'
+            });
+            speedTopic = new ROSLIB.Topic({
+                ros: ros,
+                name: '/hmi/speed',
+                messageType: 'std_msgs/Float32'
+            });
+            throttleTopic = new ROSLIB.Topic({
+                ros: ros,
+                name: '/hmi/throttle',
+                messageType: 'std_msgs/Float32'
+            });
+            brakingTopic = new ROSLIB.Topic({
+                ros: ros,
+                name: '/hmi/braking',
+                messageType: 'std_msgs/Float32'
+            });
+            // TODO
+            controlModeTopic = new ROSLIB.Topic({
+                ros: ros,
+                name: '/control_mode',
+                messageType: 'autoware_vehicle_msgs/ControlModeReport'
+            });
+
+            // Subscribers callbacks
+            statusTopic.subscribe((message) => {
+                document.getElementById('statusBox').innerText = message.data;
+            });
+
+            throttleTopic.subscribe((message) => {
+                document.getElementById('throttleBox').innerText = message.data.toFixed(2) + ' %';
+            });
+
+            brakingTopic.subscribe((message) => {
+                document.getElementById('brakingBox').innerText = message.data.toFixed(2) + ' %';
+            });
+
+            speedTopic.subscribe((message) => {
+                document.getElementById('speedBox').innerText = (message.data * 3.6).toFixed(2) + ' km/h';
+            });
+
+            controlModeTopic.subscribe((message) => {
+                // Heartbeat
+                resetTimeout();
+                if (!ros_connected) {
+                    button_manual.className = "button_idle";
+                    button_auto.className = "button_idle";
+                    button_auto_steer.className = "button_idle";
+                    button_auto_vel.className = "button_idle";
+                }
+                ros_connected = true;
+
+                // Change button colors to selected mode
+                switch (value) {
+                    case 1:
+                        button_manual.className = "button_idle";
+                        button_auto.className = "button_selected";
+                        button_auto_steer.className = "button_idle";
+                        button_auto_vel.className = "button_idle";
+                        break;
+
+                    case 2:
+                        button_manual.className = "button_idle";
+                        button_auto.className = "button_idle";
+                        button_auto_steer.className = "button_selected";
+                        button_auto_vel.className = "button_idle";
+                        break;
+
+                    case 3:
+                        button_manual.className = "button_idle";
+                        button_auto.className = "button_idle";
+                        button_auto_steer.className = "button_idle";
+                        button_auto_vel.className = "button_selected";
+                        break;
+
+                    case 4:
+                        button_manual.className = "button_selected";
+                        button_auto.className = "button_idle";
+                        button_auto_steer.className = "button_idle";
+                        button_auto_vel.className = "button_idle";
+                        break;
+
+                    default:
+                        button_manual.className = "button_idle";
+                        button_auto.className = "button_idle";
+                        button_auto_steer.className = "button_idle";
+                        button_auto_vel.className = "button_idle";
+                }
+            });
+
+        }
+
+
+        // Service functions
+        function setControlMode(control_mode) {
+            if (ros_connected) {
+
+                const request = new ROSLIB.ServiceRequest({
+                    stamp: {
+                        sec: Math.floor(Date.now() / 1000),
+                        nanosec: (Date.now() % 1000) * 1000000
+                    },
+                    mode: control_mode
+                });
+
+                controlModeService.callService(request, (response) => {
+                    console.log(response);
+                });
+
+            }
+        }
+
+        // Watchdog function
+        function resetTimeout() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                document.getElementById('statusBox').style.cssText = "";
+            }
+
+            timeoutId = setTimeout(() => {
+                document.getElementById('statusBox').innerText = "Communication timeout!!!";
+                document.getElementById('statusBox').style.color = "red";
+                document.getElementById('statusBox').style.fontWeight = "bold";
+                document.getElementById('statusBox').style.fontSize = "20px";
+                console.log('Communication timeout!');
+            }, timeout_ms);
+        }
+
+        loadConfigAndStart();
+
+
+    </script>
+</body>
+
+<footer class="footer">
+    <img src="Logo_LMA_trim.png" alt="Logo" class="footer-logo">
+    <!-- <p>Laboratory of Autonomous Mobility (LMA)</p> -->
+</footer>
+
+</html>
