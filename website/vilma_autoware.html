@@ -207,21 +207,14 @@
         </div>
 
         <div class="table-row">
-            <div class="display-box">
-                <div class="title">Distance</div>
-                <div class="value" id="distanceBox">-</div>
-            </div>
-        </div>
-
-        <div class="table-row">
-            <div class="display-box-thin">
-                <div class="title">Speed Leader</div>
-                <div class="value" id="speedLeaderBox">-</div>
-            </div>
-
             <div class="display-box-thin">
                 <div class="title">Speed Ego</div>
                 <div class="value" id="speedBox">-</div>
+            </div>
+            
+            <div class="display-box-thin">
+                <div class="title">Target Speed</div>
+                <div class="value" id="speedTargetBox">-</div>
             </div>
         </div>
 
@@ -274,6 +267,7 @@
         // Subscriber for status updates
         let statusTopic = new ROSLIB.Topic();
         let speedTopic = new ROSLIB.Topic();
+        let speedTargetTopic = new ROSLIB.Topic();
         let throttleTopic = new ROSLIB.Topic();
         let brakingTopic = new ROSLIB.Topic();
         let steerTopic = new ROSLIB.Topic();
@@ -322,6 +316,11 @@
                 name: '/hmi/speed',
                 messageType: 'std_msgs/Float32'
             });
+            speedTargetTopic = new ROSLIB.Topic({
+                ros: ros,
+                name: '/hmi/speed_target',
+                messageType: 'std_msgs/Float32'
+            });
             throttleTopic = new ROSLIB.Topic({
                 ros: ros,
                 name: '/hmi/throttle',
@@ -354,6 +353,10 @@
 
             speedTopic.subscribe((message) => {
                 document.getElementById('speedBox').innerText = (message.data * 3.6).toFixed(2) + ' km/h';
+            });
+
+            speedTargetTopic.subscribe((message) => {
+                document.getElementById('speedTargetBox').innerText = (message.data * 3.6).toFixed(2) + ' km/h';
             });
 
             controlModeTopic.subscribe((message) => {
