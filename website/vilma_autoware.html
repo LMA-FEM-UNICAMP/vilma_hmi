@@ -16,7 +16,7 @@
         body {
             text-align: center;
             font-family: Lato;
-            padding: 20px;
+            padding: 5px;
             display: flex;
             flex-direction: column;
 
@@ -179,10 +179,10 @@
 
         /* ----- TABLE-LIKE BODY ----- */
         .table-container {
-            margin: 15px;
+            margin: 5px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 5px;
         }
 
         .table-row {
@@ -190,10 +190,28 @@
             gap: 8px;
             flex-wrap: wrap;
         }
+
+        .corner-ball {
+            /* Position in the top-right corner */
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+
+            /* Dimensions and shape */
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+
+            /* Visual styling (gives it a 3D sphere look) */
+            background: #a1a1a1
+        }
     </style>
 </head>
 
 <body>
+
+    <div class="corner-ball" id="status_ball"></div>
 
     <div class="table-container">
 
@@ -215,6 +233,18 @@
             <div class="display-box-thin">
                 <div class="title">Target Speed</div>
                 <div class="value" id="speedTargetBox">-</div>
+            </div>
+        </div>
+
+        <div class="table-row">
+            <div class="display-box-thin">
+                <div class="title">Steer Ego</div>
+                <div class="value" id="steerBox">-</div>
+            </div>
+
+            <div class="display-box-thin">
+                <div class="title">Target Steer</div>
+                <div class="value" id="steerTargetBox">-</div>
             </div>
         </div>
 
@@ -268,10 +298,10 @@
         // Subscriber for status updates
         let statusTopic = new ROSLIB.Topic();
         let speedTopic = new ROSLIB.Topic();
+        let steerTopic = new ROSLIB.Topic();
         let speedTargetTopic = new ROSLIB.Topic();
         let throttleTopic = new ROSLIB.Topic();
         let brakingTopic = new ROSLIB.Topic();
-        let steerTopic = new ROSLIB.Topic();
         let controlModeTopic = new ROSLIB.Topic();
 
         async function loadConfigAndStart() {
@@ -302,7 +332,7 @@
             // TODO Configure service
             controlModeService = new ROSLIB.Service({
                 ros: ros,
-                name: '/control_mode_request',
+                name: '/control/control_mode_request',
                 serviceType: 'autoware_vehicle_msgs/srv/ControlModeCommand'
             });
 
@@ -314,13 +344,18 @@
             });
             speedTopic = new ROSLIB.Topic({
                 ros: ros,
-                name: '/hmi/speed',
-                messageType: 'std_msgs/Float32'
+                name: '/vehicle/status/velocity_status',
+                messageType: 'autoware_vehicle_msgs/VelocityReport'
             });
             speedTargetTopic = new ROSLIB.Topic({
                 ros: ros,
-                name: '/hmi/speed_target',
-                messageType: 'std_msgs/Float32'
+                name: '/control/command/control_cmd',
+                messageType: 'autoware_control_msgs/Control'
+            });
+            steerTopic = new ROSLIB.Topic({
+                ros: ros,
+                name: '/vehicle/status/steering_status',
+                messageType: 'autoware_vehicle_msgs/SteeringReport'
             });
             throttleTopic = new ROSLIB.Topic({
                 ros: ros,
@@ -335,44 +370,55 @@
             // TODO
             controlModeTopic = new ROSLIB.Topic({
                 ros: ros,
-                name: '/control_mode',
+                name: '/vehicle/status/control_mode',
                 messageType: 'autoware_vehicle_msgs/ControlModeReport'
             });
 
             // Subscribers callbacks
             statusTopic.subscribe((message) => {
+                msgReceived();
                 document.getElementById('statusBox').innerText = message.data;
             });
 
             throttleTopic.subscribe((message) => {
+                msgReceived();
                 document.getElementById('throttleBox').innerText = message.data.toFixed(2) + ' %';
             });
 
             brakingTopic.subscribe((message) => {
+                msgReceived();
                 document.getElementById('brakingBox').innerText = message.data.toFixed(2) + ' %';
             });
 
             speedTopic.subscribe((message) => {
-                document.getElementById('speedBox').innerText = (message.data * 3.6).toFixed(2) + ' km/h';
+                msgReceived();
+                document.getElementById('speedBox').innerText = (message.longitudinal_velocity * 3.6).toFixed(2) + ' km/h';
             });
 
             speedTargetTopic.subscribe((message) => {
-                document.getElementById('speedTargetBox').innerText = (message.data * 3.6).toFixed(2) + ' km/h';
+                msgReceived();
+                document.getElementById('speedTargetBox').innerText = (message.longitudinal.velocity * 3.6).toFixed(2) + ' km/h';
+                document.getElementById('steerTargetBox').innerText = (message.lateral.steering_tire_angle/3.14156*180.0).toFixed(2) + '°';
+            });
+
+            steerTopic.subscribe((message) => {
+                msgReceived();
+                document.getElementById('steerBox').innerText = (message.steering_tire_angle/3.14156*180.0).toFixed(2) + '°';
             });
 
             controlModeTopic.subscribe((message) => {
+                msgReceived();
+
                 // Heartbeat
                 resetTimeout();
-                if (!ros_connected) {
-                    button_manual.className = "button_idle";
-                    button_auto.className = "button_idle";
-                    button_auto_steer.className = "button_idle";
-                    button_auto_vel.className = "button_idle";
+                if(!ros_connected){
+                    document.getElementById('statusBox').innerText = "Vehicle interface connected.";
+                    document.getElementById('status_ball').style.backgroundColor = "#ff0000";
                 }
                 ros_connected = true;
 
                 // Change button colors to selected mode
-                switch (value) {
+                switch (message.mode) {
                     case 1:
                         button_manual.className = "button_idle";
                         button_auto.className = "button_selected";
@@ -412,6 +458,18 @@
         }
 
 
+        function msgReceived(){
+            const ball = document.getElementById('status_ball');
+            const currentColor = window.getComputedStyle(ball).backgroundColor;
+
+            if (currentColor === "rgb(255, 0, 0)") {
+                ball.style.backgroundColor = "#00ff00"; // Changes to green
+                console.log("Heartbeat");
+            } else if (currentColor === "rgb(0, 255, 0)") {
+                ball.style.backgroundColor = "#ff0000"; // Changes to red
+            }
+        }
+
         // Service functions
         function setControlMode(control_mode) {
             if (ros_connected) {
@@ -425,7 +483,12 @@
                 });
 
                 controlModeService.callService(request, (response) => {
-                    console.log(response);
+                    if(response){
+                        document.getElementById('statusBox').innerText = "Mode changed sucessfully.";
+                    }
+                    else{
+                        document.getElementById('statusBox').innerText = "Mode change request failed.";
+                    }
                 });
 
             }
@@ -444,6 +507,11 @@
                 document.getElementById('statusBox').style.fontWeight = "bold";
                 document.getElementById('statusBox').style.fontSize = "20px";
                 console.log('Communication timeout!');
+                button_manual.className = "button_idle";
+                button_auto.className = "button_idle";
+                button_auto_steer.className = "button_idle";
+                button_auto_vel.className = "button_idle";
+                ros_connected = false;
             }, timeout_ms);
         }
 
